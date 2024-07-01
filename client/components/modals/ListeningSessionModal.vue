@@ -8,7 +8,7 @@
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
       <div class="flex items-center">
         <p class="text-base text-gray-200">{{ _session.displayTitle }}</p>
-        <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">by {{ _session.displayAuthor }}</p>
+        <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">{{ $getString('LabelByAuthor', [_session.displayAuthor]) }}</p>
       </div>
 
       <div class="w-full h-px bg-white bg-opacity-10 my-4" />
@@ -80,8 +80,8 @@
           </div>
         </div>
         <div class="w-full md:w-1/3">
-          <p class="font-semibold uppercase text-xs text-gray-400 tracking-wide mb-2 mt-6 md:mt-0">{{ $strings.LabelUser }}</p>
-          <p class="mb-1 text-xs">{{ _session.userId }}</p>
+          <p v-if="!isMediaItemShareSession" class="font-semibold uppercase text-xs text-gray-400 tracking-wide mb-2 mt-6 md:mt-0">{{ $strings.LabelUser }}</p>
+          <p v-if="!isMediaItemShareSession" class="mb-1 text-xs">{{ _session.userId }}</p>
 
           <p class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">{{ $strings.LabelMediaPlayer }}</p>
           <p class="mb-1">{{ playMethodName }}</p>
@@ -99,8 +99,8 @@
       </div>
 
       <div class="flex items-center">
-        <ui-btn v-if="!isOpenSession" small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
-        <ui-btn v-else small color="error" @click.stop="closeSessionClick">Close Open Session</ui-btn>
+        <ui-btn v-if="!isOpenSession && !isMediaItemShareSession" small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-else-if="!isMediaItemShareSession" small color="error" @click.stop="closeSessionClick">Close Open Session</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -166,6 +166,9 @@ export default {
     },
     isOpenSession() {
       return !!this._session.open
+    },
+    isMediaItemShareSession() {
+      return this._session.mediaPlayer === 'web-share'
     }
   },
   methods: {

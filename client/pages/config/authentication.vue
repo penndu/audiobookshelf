@@ -4,7 +4,7 @@
       <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
         <div class="flex items-center">
           <ui-checkbox v-model="showCustomLoginMessage" checkbox-bg="bg" />
-          <p class="text-lg pl-4">Custom Message on Login</p>
+          <p class="text-lg pl-4">{{ $strings.HeaderCustomMessageOnLogin }}</p>
         </div>
         <transition name="slide">
           <div v-if="showCustomLoginMessage" class="w-full pt-4">
@@ -57,6 +57,9 @@
             <ui-text-input-with-label ref="openidClientId" v-model="newAuthSettings.authOpenIDClientID" :disabled="savingSettings" :label="'Client ID'" class="mb-2" />
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
+
+            <ui-dropdown v-if="openIdSigningAlgorithmsSupportedByIssuer.length" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :items="openIdSigningAlgorithmsSupportedByIssuer" :label="'Signing Algorithm'" :disabled="savingSettings" class="mb-2" />
+            <ui-text-input-with-label v-else ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
 
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
             <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
@@ -138,6 +141,7 @@ export default {
       enableOpenIDAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
+      openIdSigningAlgorithmsSupportedByIssuer: [],
       newAuthSettings: {}
     }
   },
@@ -178,6 +182,22 @@ export default {
         this.newAuthSettings.authOpenIDIssuerURL = this.newAuthSettings.authOpenIDIssuerURL.replace('/.well-known/openid-configuration', '')
       }
 
+      const setSupportedSigningAlgorithms = (algorithms) => {
+        if (!algorithms?.length || !Array.isArray(algorithms)) {
+          console.warn('Invalid id_token_signing_alg_values_supported from openid-configuration', algorithms)
+          this.openIdSigningAlgorithmsSupportedByIssuer = []
+          return
+        }
+        this.openIdSigningAlgorithmsSupportedByIssuer = algorithms
+
+        // If a signing algorithm is already selected, then keep it, when it is still supported.
+        // But if it is not supported, then select one of the supported ones.
+        let currentAlgorithm = this.newAuthSettings.authOpenIDTokenSigningAlgorithm
+        if (!algorithms.includes(currentAlgorithm)) {
+          this.newAuthSettings.authOpenIDTokenSigningAlgorithm = algorithms[0]
+        }
+      }
+
       this.$axios
         .$get(`/auth/openid/config?issuer=${issuerUrl}`)
         .then((data) => {
@@ -187,6 +207,7 @@ export default {
           if (data.userinfo_endpoint) this.newAuthSettings.authOpenIDUserInfoURL = data.userinfo_endpoint
           if (data.end_session_endpoint) this.newAuthSettings.authOpenIDLogoutURL = data.end_session_endpoint
           if (data.jwks_uri) this.newAuthSettings.authOpenIDJwksURL = data.jwks_uri
+          if (data.id_token_signing_alg_values_supported) setSupportedSigningAlgorithms(data.id_token_signing_alg_values_supported)
         })
         .catch((error) => {
           console.error('Failed to receive data', error)
@@ -222,6 +243,10 @@ export default {
       }
       if (!this.newAuthSettings.authOpenIDClientSecret) {
         this.$toast.error('Client Secret required')
+        isValid = false
+      }
+      if (!this.newAuthSettings.authOpenIDTokenSigningAlgorithm) {
+        this.$toast.error('Signing Algorithm required')
         isValid = false
       }
 
@@ -285,14 +310,14 @@ export default {
         .then((data) => {
           this.$store.commit('setServerSettings', data.serverSettings)
           if (data.updated) {
-            this.$toast.success('Server settings updated')
+            this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
           } else {
             this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)
-          this.$toast.error('Failed to update server settings')
+          this.$toast.error(this.$strings.ToastServerSettingsUpdateFailed)
         })
         .finally(() => {
           this.savingSettings = false

@@ -24,11 +24,11 @@
       </nuxt-link>
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="flex-grow h-full flex justify-center items-center" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isPlaylistsPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonPlaylists }}</p>
-        <span v-else class="material-icons-outlined text-lg">queue_music</span>
+        <span v-else class="material-symbols-outlined text-lg">queue_music</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
-        <span v-else class="material-icons-outlined text-lg">collections_bookmark</span>
+        <span v-else class="material-symbols-outlined text-lg">collections_bookmark</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="flex-grow h-full flex justify-center items-center" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isAuthorsPage" class="text-sm">{{ $strings.ButtonAuthors }}</p>
@@ -84,11 +84,6 @@
 
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
-      <!-- home page -->
-      <template v-else-if="isHome">
-        <div class="flex-grow" />
-        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
-      </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
         <div class="flex-grow" />
@@ -99,10 +94,15 @@
       <!-- authors page -->
       <template v-else-if="page === 'authors'">
         <div class="flex-grow" />
-        <ui-btn v-if="userCanUpdate && authors && authors.length && !isBatchSelecting" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
+        <ui-btn v-if="userCanUpdate && authors?.length && !isBatchSelecting" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
 
         <!-- author sort select -->
-        <controls-sort-select v-if="authors && authors.length" v-model="settings.authorSortBy" :descending.sync="settings.authorSortDesc" :items="authorSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorSort" />
+        <controls-sort-select v-if="authors?.length" v-model="settings.authorSortBy" :descending.sync="settings.authorSortDesc" :items="authorSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorSort" />
+      </template>
+      <!-- home page -->
+      <template v-else-if="isHome">
+        <div class="flex-grow" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
     </div>
   </div>
@@ -187,6 +187,10 @@ export default {
         {
           text: this.$strings.LabelTotalDuration,
           value: 'totalDuration'
+        },
+        {
+          text: this.$strings.LabelRandomly,
+          value: 'random'
         }
       ]
     },
